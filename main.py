@@ -1,80 +1,199 @@
+#imports
 import pygame
-from tank import Tank
+import math
+
 from network import Network
 from utils import scale_image, blit_rotate_center
 
-clientNumber = 0
+pygame.font.init()
+
+#constants
 
 TANK = scale_image(pygame.image.load("img/tank.png"), 0.2)
+BULLET = scale_image(pygame.image.load("img/bullet.png"), 1)
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-
+GREEN = (0, 255, 0)
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
 
-SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Tanks")
+NAME_FONT = pygame.font.SysFont("comicsans", 20)
+TIME_FONT = pygame.font.SysFont("comicsans", 30)
+SCORE_FONT = pygame.font.SysFont("comicsans", 26)
 
-FPS = 30
+BOX_SIZE = 50
 
-clock = pygame.time.Clock()
+ROTATION_VEL = 1
+MAX_VEL = 2
+ACCELERATION = 0.05
+
+FIRE_RATE = 150
+
+#dynamic variables
+boxes = []
+players = {}
+bullets = []
+start = False
 
 
-block_size = 20
-tank_size = 40
+def redraw_game(boxes, players, bullets, start):
 
-def read_pos(str):
-    print("s: " + str)
-    str = str.split(",")
-    return int(str[0]), int(str[1]), int(str[2])
+    #global SCREEN
 
-
-def make_pos(tup):
-    print(tup)
-    return str(int(tup[0])) + "," + str(int(tup[1])) + "," + str(int(tup[2]))
-
-def redraw_game(t, t2):
-
+    #fill screen
     SCREEN.fill(WHITE)
-    t.draw(SCREEN)
-    t2.draw(SCREEN)
 
-    pygame.display.update()
+    #draw boxes
+    for box in boxes:
+        pygame.draw.rect(SCREEN, BLACK, (box[0], box[1], BOX_SIZE, BOX_SIZE))
 
-def game_loop():
+    for bullet in bullets:
+        blit_rotate_center(SCREEN, TANK, (bullet["x"], bullet["y"]), bullet["angle"])
+
+    #draw players
+    for player in players:
+        p = players[player]
+        blit_rotate_center(SCREEN, TANK, (p["x"], p["y"]), p["angle"])
+
+    #draw scoreboard
+    sort_players = list(reversed(sorted(players, key=lambda x: players[x]["health"])))
+    title = TIME_FONT.render("Scoreboard", 1, BLACK)
+    start_y = 25
+    x = SCREEN_WIDTH - title.get_width() - 10
+    SCREEN.blit(title, (x, 5))
+
+    count = 0
+    for player in sort_players:
+        p = players[player]
+        count += 1
+        name = p["name"]
+        health = str(p["health"])
+        score = name + ": " + str(health)
+        text = SCORE_FONT.render(score, 1, BLACK)
+        SCREEN.blit(text, (x, start_y + count*20))
+
+    #draw start features
+    if not start:
+        for player in players:
+            p = players[player]
+            color = RED
+            if p["ready"]:
+                color = GREEN
+            name = NAME_FONT.render(p["name"], 1, color)
+            x = p["x"]
+            y = p["y"] - name.get_height() - 10
+            SCREEN.blit(name, (x, y))
+        
+        text = TIME_FONT.render("Press SPACE to Ready Up!!", 1, BLACK)
+        SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width(), SCREEN_HEIGHT//2 - text.get_height()))
+
+
+def game_loop(name):
+
+    global boxes, players, bullets, start
+
+    #connect to network
+    server = Network()
+    current_id = server.connect(name)
+    boxes, players, bullets, start = server.receive_data()
+
+
+    #setup clock
+    clock = pygame.time.Clock()
+    fps = 30
+
     run = True
 
-    n = Network()
-    start_pos = read_pos(n.getPos())
-    
-    t = Tank(max_vel=2, rotation_vel=1, start_pos=start_pos, img=TANK)
-    t2 = Tank(max_vel=2, rotation_vel=1, start_pos=start_pos, img=TANK)
+    fire_cooldown = FIRE_RATE
      
- 
     while run:
 
-        t2_pos = read_pos(str(n.send(make_pos((t.x, t.y, t.angle)))))
-        t2.x = t2_pos[0]
-        t2.y = t2_pos[1]
-        t2.angle = t2_pos[2]
-        print("t2  : x: " + str(t2.x) + "  y: " + str(t2.y) + "  a: " + str(t2.angle))
+        clock.tick(fps)
+        player = players[current_id]
 
+        command = ""
+
+        keys = pygame.key.get_pressed()
+
+        if start:
+
+            moved = False
+            player["fired"] = False
+
+            fire_cooldown = max(fire_cooldown - 1, 0)
+
+            if keys[pygame.K_LEFT]:
+                player["angle"] += ROTATION_VEL
+
+            elif keys[pygame.K_RIGHT]:
+                player["angle"] -= ROTATION_VEL
+            
+            if keys[pygame.K_UP]:
+                moved = True
+                player["velocity"] = min(player["velocity"] + ACCELERATION, MAX_VEL)
+
+            elif keys[pygame.K_DOWN]:
+                moved = True
+                player["velocity"] = min(player["velocity"] - ACCELERATION, MAX_VEL)
+                player["velocity"] = max(player["velocity"] - ACCELERATION, -1*MAX_VEL)
+
+            else:
+                if player["velocity"] > 0:
+                    player["velocity"] = max(player["velocity"] - ACCELERATION, 0 )
+                else:
+                    player["velocity"] = min(player["velocity"] + ACCELERATION, 0 )
+        
+            
+            radians = math.radians(player["angle"])
+            vertical = math.cos(radians) * player["velocity"]
+            horizontal = math.sin(radians) * player["velocity"]
+
+            player["x"] -= horizontal
+            player["y"] -= vertical
+            
+            if keys[pygame.K_SPACE] & fire_cooldown == 0:
+                fire_cooldown = FIRE_RATE
+                player["fired"] = True
+
+        
+        else:
+            if keys[pygame.K_SPACE]:
+                player["ready"] = True
+                
+            command = "ready"     
+        
+        data = command, player
+        server.send_data(data)
+        boxes, players, bullets, start = server.receive_data()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+        
 
-        t.control()
+        redraw_game(boxes, players, bullets, start)
+        pygame.display.update()
 
-        redraw_game(t, t2)
 
-        clock.tick(FPS)
-
+    server.disconnect()
     pygame.quit()
     quit()
 
 
-game_loop()
+#get name
+while True:
+    name = input("Please enter your name: ")
+    if 0 < len(name) < 20:
+        break
+    else:
+        print("Error, this name is not allowed (must be between 1 and 19 characters)")
+
+#setup pygame screen
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Tanks")
+
+#start game
+game_loop(name)

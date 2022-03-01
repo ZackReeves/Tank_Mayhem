@@ -1,27 +1,42 @@
 import socket
-
+import pickle
+import struct
 
 class Network:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "172.23.160.1"
+        self.server = "192.168.0.14"
         self.port = 5555
         self.addr = (self.server, self.port)
-        self.pos = self.connect()
 
-    def getPos(self):
-        return self.pos
 
-    def connect(self):
-        try:
-            self.client.connect(self.addr)
-            return self.client.recv(2048).decode()
-        except:
-            pass
+    def connect(self, name):
 
-    def send(self, data):
-        try:
-            self.client.send(str.encode(data))
-            return self.client.recv(2048).decode()
-        except socket.error as e:
-            print(e)
+        # connects to server
+
+        self.client.connect(self.addr)
+        self.send_data(name)
+        client_id = self.receive_data()
+        return client_id
+
+    
+    def disconnect(self):
+
+        #disconnects from server
+
+        self.client.close()
+
+    def send_data(self, data):
+
+        # print("sending data: ", data)
+        serialized_data = pickle.dumps(data)
+        self.client.send(struct.pack('i', len(serialized_data)))
+        self.client.send(serialized_data)
+
+    def receive_data(self):
+        data_size = struct.unpack('i', self.client.recv(4))[0]
+        received = self.client.recv(data_size)
+        data = pickle.loads(received)
+
+        # print("received data: ", data)
+        return data
