@@ -9,8 +9,9 @@ pygame.font.init()
 
 #constants
 
-TANK = scale_image(pygame.image.load("img/tank.png"), 0.2)
-BULLET = scale_image(pygame.image.load("img/bullet.png"), 1)
+TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
+BULLET = scale_image(pygame.image.load("img/bullet.png"), 1, 1)
+BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81)  #38x31
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -48,10 +49,10 @@ def redraw_game(boxes, players, bullets, start):
 
     #draw boxes
     for box in boxes:
-        pygame.draw.rect(SCREEN, BLACK, (box[0], box[1], BOX_SIZE, BOX_SIZE))
+        blit_rotate_center(SCREEN, BOX, (box[0], box[1]), 0)
 
-    for bullet in bullets:
-        blit_rotate_center(SCREEN, TANK, (bullet["x"], bullet["y"]), bullet["angle"])
+    # for bullet in bullets:
+    #     blit_rotate_center(SCREEN, BULLET, (bullet["x"], bullet["y"]), bullet["angle"])
 
     #draw players
     for player in players:
@@ -87,8 +88,8 @@ def redraw_game(boxes, players, bullets, start):
             y = p["y"] - name.get_height() - 10
             SCREEN.blit(name, (x, y))
         
-        text = TIME_FONT.render("Press SPACE to Ready Up!!", 1, BLACK)
-        SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width(), SCREEN_HEIGHT//2 - text.get_height()))
+        text = TIME_FONT.render("Press SPACE to Ready Up!!", 1, RED)
+        SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, SCREEN_HEIGHT//2 - text.get_height()))
 
 
 def game_loop(name):

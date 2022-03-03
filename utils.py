@@ -1,7 +1,7 @@
 import pygame
 
-def scale_image(img, factor):
-    size = round(img.get_width()*factor), round(img.get_height()*factor)
+def scale_image(img, x_factor, y_factor):
+    size = round(img.get_width()*x_factor), round(img.get_height()*y_factor)
     return pygame.transform.scale(img,size)
 
 def blit_rotate_center(surface, image, top_left, angle):

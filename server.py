@@ -18,6 +18,8 @@ PORT = 5555
 
 BOX_SIZE = 25
 
+BULLET_SIZE = (2,6)
+
 W, H = 800, 800
 
 HOST_NAME = socket.gethostname()
@@ -38,7 +40,7 @@ print(f"[SERVER] Server started with local ip {SERVER_IP}")
 #dynamic variable
 players = {}
 boxes = []
-bullets = []
+bullets = {}
 connections = 0
 _id = 0
 start = False
@@ -58,11 +60,11 @@ def get_start_position(players):
     
 
 def create_boxes(boxes, n):
-    for i in range(n):
+    for i in range(2*n):
         while True:
             stop = True
-            x = random.randrange(150, 650)
-            y = random.randrange(60, 740)
+            x = random.randrange(1, 30)*random.choice((25, 50))
+            y = random.randrange(1, 30)*25
             for player in players:
                 p = players[player]
                 if p["x"] <= x + BOX_SIZE & p["x"] >= x & p["y"] <= y + BOX_SIZE & p["y"] >= y:
@@ -72,6 +74,18 @@ def create_boxes(boxes, n):
                 break
         
         boxes.append((x, y))
+    
+    boxes.sort(key=lambda x: x[1])
+
+def create_bullet(player):
+    max_vel = 2
+    x = player["x"]
+    y = player["y"]
+    angle = player["angle"]
+
+
+
+
 
 def ready_up(players, connections):
 
@@ -143,12 +157,15 @@ def threaded_client(conn, _id):
                 break
 
             if command == "":
+
+                # if start:
                 
-                #if fired:
-                    #create bullet
+                    # if fired:
+                    #     create_bullet()
+                    
 
 
-                #if start:
+                
                     #move bullets()
                     #check_box_hit()
                     #check_player_hit()
