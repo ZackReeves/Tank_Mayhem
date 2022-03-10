@@ -175,15 +175,12 @@ def threaded_client(conn, _id):
                     create_boxes(boxes, random.randrange(15, 25))
                     print("[GAME] Generating more boxes")
                 
-                data = boxes, players, bullets, start
             
             elif command == "ready":
                 ready_up(players, connections)
 
             else:
                 print("[WARNING] No command received")
-
-                data = boxes, players, bullets, start
             
             data = boxes, players, bullets, start
             
