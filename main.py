@@ -25,7 +25,10 @@ NAME_FONT = pygame.font.SysFont("comicsans", 20)
 TIME_FONT = pygame.font.SysFont("comicsans", 30)
 SCORE_FONT = pygame.font.SysFont("comicsans", 26)
 
-BOX_SIZE = 50
+BOX_SIZE = 25
+
+TANK_W = 30
+TANK_H = 30
 
 ROTATION_VEL = 1
 MAX_VEL = 2
@@ -51,12 +54,15 @@ def redraw_game(boxes, players, bullets, start):
     for box in boxes:
         blit_rotate_center(SCREEN, BOX, (box[0], box[1]), 0)
 
-    # for bullet in bullets:
-    #     blit_rotate_center(SCREEN, BULLET, (bullet["x"], bullet["y"]), bullet["angle"])
+        pygame.draw.rect(SCREEN, RED, pygame.Rect(box[0], box[1], BOX_SIZE, BOX_SIZE))
+
+    for bullet in bullets:
+        blit_rotate_center(SCREEN, BULLET, (bullet[0], bullet[1]), bullet[2])
 
     #draw players
     for player in players:
         p = players[player]
+        pygame.draw.rect(SCREEN, GREEN, pygame.Rect(p["x"], p["y"], TANK_W, TANK_H))
         blit_rotate_center(SCREEN, TANK, (p["x"], p["y"]), p["angle"])
 
     #draw scoreboard
@@ -155,7 +161,7 @@ def game_loop(name):
             player["x"] -= horizontal
             player["y"] -= vertical
             
-            if keys[pygame.K_SPACE] & fire_cooldown == 0:
+            if keys[pygame.K_SPACE] and fire_cooldown == 0:
                 fire_cooldown = FIRE_RATE
                 player["fired"] = True
 
@@ -177,6 +183,7 @@ def game_loop(name):
 
         redraw_game(boxes, players, bullets, start)
         pygame.display.update()
+        print("loop")
 
 
     server.disconnect()

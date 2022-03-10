@@ -22,6 +22,9 @@ BULLET_SIZE = (2,6)
 
 W, H = 800, 800
 
+TANK_W = 30
+TANK_H = 30
+
 HOST_NAME = socket.gethostname()
 SERVER_IP = socket.gethostbyname(HOST_NAME)
 
@@ -40,7 +43,7 @@ print(f"[SERVER] Server started with local ip {SERVER_IP}")
 #dynamic variable
 players = {}
 boxes = []
-bullets = {}
+bullets = []
 connections = 0
 _id = 0
 start = False
@@ -79,13 +82,51 @@ def create_boxes(boxes, n):
 
 def create_bullet(player):
     max_vel = 2
-    x = player["x"]
+    x = player["x"] + 2
     y = player["y"]
     angle = player["angle"]
+    vel = (player["velocity"] + 2*max_vel) / 2 # normalises to 0.5 max_vel < vel < 1.5 max_vel
 
+    bullets.append((x, y, angle, vel))
 
+def check_collisions(player, old_x, old_y):
+    new_x = player["x"]
+    new_y = player["y"]
+    
+    if new_x < 0:
+        new_x = 0
+    elif new_x > W-TANK_W:
+        new_x = W-TANK_W
 
+    if new_y < 0:
+        new_y = 0
+    elif new_y > H-TANK_H:
+        new_y = H-TANK_H
 
+    for box in boxes:
+        collide = False
+
+        if new_y + TANK_H > box[1] and new_y < box[1] + BOX_SIZE:
+            if new_x + TANK_W > box[0] and new_x < box[0] + BOX_SIZE:
+                collide = True
+
+        if old_y + TANK_H > box[1] and old_y < box[1] + BOX_SIZE and collide:
+            if old_x > box[0]:
+                new_x = box[0] + BOX_SIZE
+
+            elif old_x < box[0]:
+                new_x = box[0] - TANK_W
+        
+        if old_x + TANK_W > box[0] and old_x < box[0] + BOX_SIZE and collide:
+                if old_y < box[1]:
+                    new_y = box[1] - TANK_H
+
+                elif old_y > box[1]:
+                    new_y = box[1] + BOX_SIZE
+
+    player["x"] = new_x
+    player["y"] = new_y
+    
 
 def ready_up(players, connections):
 
@@ -114,7 +155,7 @@ def receive_data(conn):
     received = conn.recv(data_size)
     data = pickle.loads(received)
 
-    print("received data: ", data)
+    #print("received data: ", data)
 
     return data
 
@@ -149,26 +190,27 @@ def threaded_client(conn, _id):
             #condition for endgame
 
         try:
-            command, data = receive_data(conn)
-
-            players[current_id] = data
+            command, data = receive_data(conn)            
             
             if not data:
                 break
 
             if command == "":
 
-                # if start:
-                
-                    # if fired:
-                    #     create_bullet()
+                if start:
+
+                    check_collisions(data, players[current_id]["x"], players[current_id]["y"])
+
+                    #check hits
+
+
                     
-
-
-                
+                    #if players[current_id]["fired"]:
+                    #    create_bullet()
+                    
                     #move bullets()
-                    #check_box_hit()
-                    #check_player_hit()
+                
+                players[current_id] = data
                     
                 
                 if len(boxes) < 25:
@@ -177,9 +219,11 @@ def threaded_client(conn, _id):
                 
             
             elif command == "ready":
+                players[current_id] = data
                 ready_up(players, connections)
 
             else:
+                players[current_id] = data
                 print("[WARNING] No command received")
             
             data = boxes, players, bullets, start
@@ -195,6 +239,8 @@ def threaded_client(conn, _id):
     print("[DISCONNECT] Name:", name, ", Client Id:", current_id, "disconnected")
 
     connections -= 1
+    if connections == 0:
+        start = False
     del players[current_id]
     conn.close()
 
@@ -203,7 +249,7 @@ def threaded_client(conn, _id):
 #MAINLOOP
 
 #setup level with boxes
-create_boxes(boxes, random.randrange(50, 100))
+create_boxes(boxes, random.randrange(50, 70))
 
 print("[GAME] Setting up level")
 print("[SERVER] Waiting for a connection, Server Started")
