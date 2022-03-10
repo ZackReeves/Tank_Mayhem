@@ -1,14 +1,22 @@
 from utils import scale_image, blit_rotate_center
 import pygame
 
-BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.13, 0.05)
+BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
 TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
 
 x = TANK.get_width()
 y = TANK.get_height()
 
+a = 5
+b = 5
+w = 10
+h = 10
 
-print((x, y))
+rect = pygame.Rect(a, b, w, h)
+
+centerx = rect.centerx
+
+print(centerx)
 
 SCREEN = pygame.display.set_mode((800, 800))
 pygame.display.set_caption("Tanks")

@@ -10,7 +10,7 @@ pygame.font.init()
 #constants
 
 TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
-BULLET = scale_image(pygame.image.load("img/bullet.png"), 1, 1)
+BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
 BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81)  #38x31
 
 WHITE = (255, 255, 255)
@@ -34,7 +34,7 @@ ROTATION_VEL = 1
 MAX_VEL = 2
 ACCELERATION = 0.05
 
-FIRE_RATE = 150
+FIRE_RATE = 30
 
 #dynamic variables
 boxes = []
@@ -183,8 +183,6 @@ def game_loop(name):
 
         redraw_game(boxes, players, bullets, start)
         pygame.display.update()
-        print("loop")
-
 
     server.disconnect()
     pygame.quit()

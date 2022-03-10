@@ -1,9 +1,11 @@
 #imports
 import socket
+import pygame
 import time
 import random
 import pickle
 import struct
+import math
 from _thread import *
 
 server = "192.168.0.18" 
@@ -16,11 +18,12 @@ S.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 #constants
 PORT = 5555
 
+W, H = 800, 800
+
 BOX_SIZE = 25
 
-BULLET_SIZE = (2,6)
-
-W, H = 800, 800
+BULLET_W = 7
+BULLET_H = 10
 
 TANK_W = 30
 TANK_H = 30
@@ -81,13 +84,46 @@ def create_boxes(boxes, n):
     boxes.sort(key=lambda x: x[1])
 
 def create_bullet(player):
-    max_vel = 2
-    x = player["x"] + 2
-    y = player["y"]
+
     angle = player["angle"]
+
+    tank_rect = pygame.Rect(player["x"], player["y"], TANK_W, TANK_H)
+    
+    bullet_rect = pygame.Rect(0, 0, BULLET_W, BULLET_H)
+
+    dist = 0.5*TANK_H + BULLET_H
+    radians = math.radians(angle)
+
+    bullet_rect.centerx = tank_rect.centerx - dist * math.sin(radians)
+    bullet_rect.centery = tank_rect.centery - dist * math.cos(radians)
+    
+    max_vel = 2
     vel = (player["velocity"] + 2*max_vel) / 2 # normalises to 0.5 max_vel < vel < 1.5 max_vel
 
-    bullets.append((x, y, angle, vel))
+    bullets.append((bullet_rect.topleft[0], bullet_rect.topleft[1], angle, vel))
+
+def move_bullets():
+
+    for i in range(len(bullets)): # bullets = [(), (), ()]
+
+        b = bullets[i]
+
+        radians = math.radians(b[2])
+
+        vertical = math.cos(radians) * b[3]
+        horizontal = math.sin(radians) * b[3]
+        
+        x = b[0] - horizontal
+        y = b[1] - vertical
+
+        bullets[i] = (x, y, b[2], b[3])
+
+        # if b[0] > W or b[0] + BULLET_W < 0 or b[1] + BULLET_H < 0 or b[1] > H:
+        #     del(bullets[i])
+        #     i -= 1
+
+    print(len(bullets))
+
 
 def check_collisions(player, old_x, old_y):
     new_x = player["x"]
@@ -205,10 +241,10 @@ def threaded_client(conn, _id):
 
 
                     
-                    #if players[current_id]["fired"]:
-                    #    create_bullet()
+                    if players[current_id]["fired"]:
+                        create_bullet(data)
                     
-                    #move bullets()
+                    move_bullets()
                 
                 players[current_id] = data
                     
