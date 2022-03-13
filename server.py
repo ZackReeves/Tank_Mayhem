@@ -106,22 +106,23 @@ def move_bullets():
 
     for bullet in bullets: # bullets = [(x, y, a, v), (), ()]
 
-        b = list(bullet) # b = [x, y, a, v]
+        i = bullets.index(bullet)
 
-        radians = math.radians(b[2])
+        b = bullets[i] # b = (x, y, a, v)
 
-        vertical = math.cos(radians) * b[3]
-        horizontal = math.sin(radians) * b[3]
+        radians = math.radians(bullet[2])
+
+        vertical = math.cos(radians) * bullet[3]
+        horizontal = math.sin(radians) * bullet[3]
         
-        b[0] = b[0] - horizontal
-        b[1] = b[1] - vertical
+        new_x = bullet[0] - horizontal
+        new_y = bullet[1] - vertical
 
-        t = tuple(b)
+        bullets[i] = (new_x, new_y, b[2], b[3])
 
-        bullets[bullets.index[bullet]] = t
+        if bullet[0] > W or bullet[0] + BULLET_W < 0 or bullet[1] + BULLET_H < 0 or bullet[1] > H:
+            bullets.pop(i)
 
-        if b[0] > W or b[0] + BULLET_W < 0 or b[1] + BULLET_H < 0 or b[1] > H:
-            bullets.pop(bullets.index[bullet])
             
 
     print(len(bullets))
