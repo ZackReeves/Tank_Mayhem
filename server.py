@@ -104,23 +104,25 @@ def create_bullet(player):
 
 def move_bullets():
 
-    for i in range(len(bullets)): # bullets = [(), (), ()]
+    for bullet in bullets: # bullets = [(x, y, a, v), (), ()]
 
-        b = bullets[i]
+        b = list(bullet) # b = [x, y, a, v]
 
         radians = math.radians(b[2])
 
         vertical = math.cos(radians) * b[3]
         horizontal = math.sin(radians) * b[3]
         
-        x = b[0] - horizontal
-        y = b[1] - vertical
+        b[0] = b[0] - horizontal
+        b[1] = b[1] - vertical
 
-        bullets[i] = (x, y, b[2], b[3])
+        t = tuple(b)
 
-        # if b[0] > W or b[0] + BULLET_W < 0 or b[1] + BULLET_H < 0 or b[1] > H:
-        #     del(bullets[i])
-        #     i -= 1
+        bullets[bullets.index[bullet]] = t
+
+        if b[0] > W or b[0] + BULLET_W < 0 or b[1] + BULLET_H < 0 or b[1] > H:
+            bullets.pop(bullets.index[bullet])
+            
 
     print(len(bullets))
 
