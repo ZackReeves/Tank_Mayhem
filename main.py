@@ -3,7 +3,7 @@ import pygame
 import math
 
 from network import Network
-from utils import scale_image, blit_rotate_center
+from utils import scale_image, rotate_center
 
 pygame.font.init()
 
@@ -11,7 +11,7 @@ pygame.font.init()
 
 TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
 BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
-BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81)  #38x31
+BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81)  #25 36
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -25,13 +25,14 @@ NAME_FONT = pygame.font.SysFont("comicsans", 20)
 TIME_FONT = pygame.font.SysFont("comicsans", 30)
 SCORE_FONT = pygame.font.SysFont("comicsans", 26)
 
-BOX_SIZE = 25
+BOX_W = TANK.get_width()
+BOX_H = TANK.get_height()
 
-TANK_W = 30
-TANK_H = 30
+TANK_W = TANK.get_width()
+TANK_H = TANK.get_height()
 
 ROTATION_VEL = 1
-MAX_VEL = 2
+MAX_VEL = 5
 ACCELERATION = 0.05
 
 FIRE_RATE = 30
@@ -52,18 +53,20 @@ def redraw_game(boxes, players, bullets, start):
 
     #draw boxes
     for box in boxes:
-        blit_rotate_center(SCREEN, BOX, (box[0], box[1]), 0)
+        SCREEN.blit(BOX, (box[0], box[1]))
 
-        pygame.draw.rect(SCREEN, RED, pygame.Rect(box[0], box[1], BOX_SIZE, BOX_SIZE))
+        # pygame.draw.rect(SCREEN, RED, pygame.Rect(box[0], box[1], BOX_W, BOX_H))
 
     for bullet in bullets:
-        blit_rotate_center(SCREEN, BULLET, (bullet[0], bullet[1]), bullet[2])
+        rotated_bullet, bullet_rect = rotate_center(BULLET, (bullet[0], bullet[1]), bullet[2])
+        SCREEN.blit(rotated_bullet, bullet_rect.topleft)
 
     #draw players
     for player in players:
         p = players[player]
-        pygame.draw.rect(SCREEN, GREEN, pygame.Rect(p["x"], p["y"], TANK_W, TANK_H))
-        blit_rotate_center(SCREEN, TANK, (p["x"], p["y"]), p["angle"])
+        # pygame.draw.rect(SCREEN, GREEN, pygame.Rect(p["x"], p["y"], TANK_W, TANK_H))
+        rotated_tank, tank_rect = rotate_center(TANK, (p["x"], p["y"]), p["angle"])
+        SCREEN.blit(rotated_tank, tank_rect.topleft)
 
     #draw scoreboard
     sort_players = list(reversed(sorted(players, key=lambda x: players[x]["health"])))
@@ -102,19 +105,50 @@ def game_loop(name):
 
     global boxes, players, bullets, start
 
-    #connect to network
-    server = Network()
-    current_id = server.connect(name)
-    boxes, players, bullets, start = server.receive_data()
-
-
-    #setup clock
     clock = pygame.time.Clock()
     fps = 30
 
     run = True
 
     fire_cooldown = FIRE_RATE
+
+    counter = 0
+
+    #connect to network
+    server = Network()
+
+    while True:
+
+        clock.tick(fps)
+
+        counter += 1
+
+        if counter == 30:
+            try:
+                current_id = server.connect(name)
+                break
+            except:
+                counter = 0
+
+            
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            
+        SCREEN.fill(WHITE)
+        text = TIME_FONT.render("Waiting For Server", 1, RED)
+        SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, SCREEN_HEIGHT//2 - text.get_height()))
+        pygame.display.update()
+
+
+                
+    
+    boxes, players, bullets, start = server.receive_data()
+
+
+    #setup clock
+
      
     while run:
 
@@ -131,6 +165,9 @@ def game_loop(name):
             player["fired"] = False
 
             fire_cooldown = max(fire_cooldown - 1, 0)
+
+            # if player["health"] = 0:
+
 
             if keys[pygame.K_LEFT]:
                 player["angle"] += ROTATION_VEL
