@@ -9,15 +9,12 @@ import math
 from utils import rotate_center, scale_image
 from _thread import *
 
-server = "192.168.0.18" 
-PORT = 5555
-
 #setup socket
 S = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 S.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 #constants
-PORT = 5555
+PORT = 12000
 
 TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
 BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
@@ -35,7 +32,7 @@ TANK_W = 30
 TANK_H = 30
 
 HOST_NAME = socket.gethostname()
-SERVER_IP = socket.gethostbyname(HOST_NAME)
+SERVER_IP = '0.0.0.0'
 
 #connect to server
 try:
@@ -47,7 +44,7 @@ except socket.error as e:
 
 S.listen()
 
-print(f"[SERVER] Server started with local ip {SERVER_IP}")
+print(f"[SERVER] Server started with ip {SERVER_IP}")
 
 #dynamic variable
 players = {}
@@ -238,6 +235,8 @@ def send_data(conn, data):
     conn.send(struct.pack('i', len(serialized_data)))
     conn.send(serialized_data)
 
+    #print(len(serialized_data))
+
 
 def receive_data(conn):
     data_size = struct.unpack('i', conn.recv(4))[0]
@@ -338,7 +337,7 @@ def threaded_client(conn, _id):
 #MAINLOOP
 
 #setup level with boxes
-create_boxes(boxes, random.randint(200, 250))
+create_boxes(boxes, random.randint(1, 10))
 print("LENGTH OF BOXES:", len(boxes))
 
 print("[GAME] Setting up level")

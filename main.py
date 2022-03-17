@@ -123,31 +123,26 @@ def game_loop(name):
 
         counter += 1
 
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                
+        SCREEN.fill(WHITE)
+        text = TIME_FONT.render("Waiting For Server", 1, RED)
+        SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, SCREEN_HEIGHT//2 - text.get_height()))
+        pygame.display.update()
+
         if counter == 30:
             try:
                 current_id = server.connect(name)
                 break
             except:
                 counter = 0
-
             
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            
-        SCREEN.fill(WHITE)
-        text = TIME_FONT.render("Waiting For Server", 1, RED)
-        SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, SCREEN_HEIGHT//2 - text.get_height()))
-        pygame.display.update()
 
-
-                
     
     boxes, players, bullets, start = server.receive_data()
-
-
-    #setup clock
 
      
     while run:

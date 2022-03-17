@@ -5,18 +5,21 @@ import struct
 class Network:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "192.168.0.14"
-        self.port = 5555
+        self.server = "18.234.140.248"
+        self.port = 12000
         self.addr = (self.server, self.port)
 
 
     def connect(self, name):
 
         # connects to server
-
-        self.client.connect(self.addr)
-        self.send_data(name)
-        client_id = self.receive_data()
+        try:
+            self.client.connect(self.addr)
+            self.send_data(name)
+            client_id = self.receive_data()
+        except:
+            print("failed to connect")
+        
         return client_id
 
     
@@ -28,15 +31,21 @@ class Network:
 
     def send_data(self, data):
 
-        # print("sending data: ", data)
+        #print(data)
+
+        #print("sending data: ", data)
         serialized_data = pickle.dumps(data)
         self.client.send(struct.pack('i', len(serialized_data)))
         self.client.send(serialized_data)
 
     def receive_data(self):
         data_size = struct.unpack('i', self.client.recv(4))[0]
-        received = self.client.recv(data_size)
-        data = pickle.loads(received)
+        #print(data_size)
 
-        # print("received data: ", data)
+        received = self.client.recv(data_size)
+        #print(len(received))
+
+        data = pickle.loads(received) #!!!!
+
+        #print("received data: ", data)
         return data
