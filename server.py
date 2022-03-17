@@ -18,12 +18,17 @@ PORT = 12000
 
 TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
 BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
-BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81) 
+BOXES = [scale_image(pygame.image.load("img/logs.png"), 0.66, 0.81), scale_image(pygame.image.load("img/barrel.png"), 0.66, 0.81), scale_image(pygame.image.load("img/tree.png"), 0.66, 0.81), scale_image(pygame.image.load("img/snowman.png"), 0.66, 0.81)]
 
 W, H = 800, 800
 
-BOX_W = 25
-BOX_H = 36
+BOX_W = []
+BOX_H = []
+
+for BOX in BOXES:
+
+    BOX_W.append(BOX.get_width())
+    BOX_H.append(BOX.get_height())
 
 BULLET_W = 7
 BULLET_H = 10
@@ -32,7 +37,7 @@ TANK_W = 30
 TANK_H = 30
 
 HOST_NAME = socket.gethostname()
-SERVER_IP = '0.0.0.0' #socket.gethostbyname(HOST_NAME)
+SERVER_IP = socket.gethostbyname(HOST_NAME)
 
 #connect to server
 try:
@@ -71,12 +76,12 @@ def get_start_position(players):
         y = random.randrange(60, H-60)
         angle = random.randrange(0, 360)
 
-        box_mask = pygame.mask.from_surface(BOX)
-
         rotated_tank, tank_rect = rotate_center(TANK, (x, y), angle)
         tank_mask = pygame.mask.from_surface(rotated_tank)
 
         for box in boxes:
+
+            box_mask = pygame.mask.from_surface(BOXES[box[2]])
 
             offset = (int(box[0] - tank_rect[0]), int(box[1] - tank_rect[1]))
 
@@ -98,15 +103,16 @@ def create_boxes(boxes, n):
             stop = True
             x = random.randrange(1, 30)*random.choice((25, 50))
             y = random.randrange(1, 30)*random.choice((25, 50))
+            image_id = random.randrange(0,len(BOXES))
             for player in players:
                 p = players[player]
-                if p["x"] <= x + BOX_W & p["x"] >= x & p["y"] <= y + BOX_H & p["y"] >= y:
+                if p["x"] <= x + BOX_W[image_id] & p["x"] >= x & p["y"] <= y + BOX_H[image_id] & p["y"] >= y:
                     stop = False
             
             if stop:
                 break
         
-        boxes.append((x, y))
+        boxes.append((x, y, image_id))
     
     boxes.sort(key=lambda x: x[1])
 
@@ -124,8 +130,8 @@ def create_bullet(player):
     bullet_rect.centerx = tank_rect.centerx - dist * math.sin(radians)
     bullet_rect.centery = tank_rect.centery - dist * math.cos(radians)
     
-    max_vel = 5
-    vel = (player["velocity"] + 2*max_vel) / 2 # normalises to 0.5 max_vel < vel < 1.5 max_vel
+    max_vel = 2
+    vel = 0.375 * (player["velocity"] + max_vel) + max_vel # normalises to 1 max_vel < vel < 1.5 max_vel
 
     bullets.append((bullet_rect.topleft[0], bullet_rect.topleft[1], angle, vel))
 
@@ -173,8 +179,6 @@ def check_collisions(player, old_player):
 
     screen_mask = pygame.mask.Mask((W, H), True)
 
-    box_mask = pygame.mask.from_surface(BOX)
-
     #screen collision
 
     offset = (int(-tank_rect[0]), int(-tank_rect[1]))
@@ -186,9 +190,11 @@ def check_collisions(player, old_player):
     #BOX COLLISION
     for box in boxes:
 
+        box_mask = pygame.mask.from_surface(BOXES[box[2]])
+
         #check rectangular collision before mask
-        if new_y + TANK_H > box[1] and new_y < box[1] + BOX_H:
-            if new_x + TANK_W > box[0] and new_x < box[0] + BOX_W:
+        if new_y + TANK_H > box[1] and new_y < box[1] + BOX_H[box[2]]:
+            if new_x + TANK_W > box[0] and new_x < box[0] + BOX_W[box[2]]:
 
                 offset = (int(box[0] - tank_rect[0]), int(box[1] - tank_rect[1]))
 
@@ -218,6 +224,25 @@ def check_collisions(player, old_player):
             player["health"] -= 1
 
             bullets.pop(bullets.index(bullet))
+        
+        for box in boxes:
+
+            box_mask = pygame.mask.from_surface(BOXES[box[2]])
+
+            #check rectangular collision before mask
+            if bullet_rect[1] + bullet_rect[3] > box[1] and bullet_rect[1] < box[1] + BOX_H[box[2]]:
+                if bullet_rect[0] + bullet_rect[3] > box[0] and bullet_rect[0] < box[0] + BOX_W[box[2]]:
+
+                    offset = (int(box[0] - bullet_rect[0]), int(box[1] - bullet_rect[1]))
+
+                    poi = tank_mask.overlap(box_mask, offset)
+
+                    if poi != None:
+                        print("destroy")
+                        bullets.pop(bullets.index(bullet))
+                        #boxes.pop(bullets.index(box))
+
+        
     
 
 def ready_up(players, connections):

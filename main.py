@@ -11,7 +11,7 @@ pygame.font.init()
 
 TANKS = [scale_image(pygame.image.load("img/tank_red.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_blue.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_green.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_yellow.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_magenta.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_cyan.png"), 0.19, 0.19)]
 BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
-BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81)  #25 36
+BOXES = [scale_image(pygame.image.load("img/logs.png"), 0.66, 0.81), scale_image(pygame.image.load("img/barrel.png"), 0.66, 0.81), scale_image(pygame.image.load("img/tree.png"), 0.66, 0.81), scale_image(pygame.image.load("img/snowman.png"), 0.66, 0.81)]
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -25,14 +25,11 @@ NAME_FONT = pygame.font.SysFont("comicsans", 20)
 TIME_FONT = pygame.font.SysFont("comicsans", 30)
 SCORE_FONT = pygame.font.SysFont("comicsans", 26)
 
-BOX_W = TANKS[0].get_width()
-BOX_H = TANKS[0].get_height()
-
 TANK_W = TANKS[0].get_width()
 TANK_H = TANKS[0].get_height()
 
 ROTATION_VEL = 1
-MAX_VEL = 5
+MAX_VEL = 2
 ACCELERATION = 0.05
 
 FIRE_RATE = 30
@@ -53,7 +50,7 @@ def redraw_game(boxes, players, bullets, start):
 
     #draw boxes
     for box in boxes:
-        SCREEN.blit(BOX, (box[0], box[1]))
+        SCREEN.blit(BOXES[box[2]], (box[0], box[1]))
 
         # pygame.draw.rect(SCREEN, RED, pygame.Rect(box[0], box[1], BOX_W, BOX_H))
 
