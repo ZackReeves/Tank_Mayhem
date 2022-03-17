@@ -9,7 +9,7 @@ pygame.font.init()
 
 #constants
 
-TANK = scale_image(pygame.image.load("img/tank.png"), 0.19, 0.19)
+TANKS = [scale_image(pygame.image.load("img/tank_red.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_blue.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_green.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_yellow.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_magenta.png"), 0.19, 0.19), scale_image(pygame.image.load("img/tank_cyan.png"), 0.19, 0.19)]
 BULLET = scale_image(pygame.image.load("img/bullet.png"), 0.20, 0.10)
 BOX = scale_image(pygame.image.load("img/box.png"), 0.66, 0.81)  #25 36
 
@@ -25,11 +25,11 @@ NAME_FONT = pygame.font.SysFont("comicsans", 20)
 TIME_FONT = pygame.font.SysFont("comicsans", 30)
 SCORE_FONT = pygame.font.SysFont("comicsans", 26)
 
-BOX_W = TANK.get_width()
-BOX_H = TANK.get_height()
+BOX_W = TANKS[0].get_width()
+BOX_H = TANKS[0].get_height()
 
-TANK_W = TANK.get_width()
-TANK_H = TANK.get_height()
+TANK_W = TANKS[0].get_width()
+TANK_H = TANKS[0].get_height()
 
 ROTATION_VEL = 1
 MAX_VEL = 5
@@ -46,7 +46,7 @@ start = False
 
 def redraw_game(boxes, players, bullets, start):
 
-    #global SCREEN
+    global SCREEN
 
     #fill screen
     SCREEN.fill(WHITE)
@@ -62,10 +62,10 @@ def redraw_game(boxes, players, bullets, start):
         SCREEN.blit(rotated_bullet, bullet_rect.topleft)
 
     #draw players
-    for player in players:
-        p = players[player]
+    for id,player in players.items():
+        p = players[id]
         # pygame.draw.rect(SCREEN, GREEN, pygame.Rect(p["x"], p["y"], TANK_W, TANK_H))
-        rotated_tank, tank_rect = rotate_center(TANK, (p["x"], p["y"]), p["angle"])
+        rotated_tank, tank_rect = rotate_center(TANKS[id % 6], (p["x"], p["y"]), p["angle"])
         SCREEN.blit(rotated_tank, tank_rect.topleft)
 
     #draw scoreboard
@@ -206,7 +206,7 @@ def game_loop(name):
         
         data = command, player
         server.send_data(data)
-        boxes, players, bullets, start = server.receive_data()
+        players, bullets, start = server.receive_data()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -232,6 +232,7 @@ while True:
 #setup pygame screen
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Tanks")
+
 
 #start game
 game_loop(name)

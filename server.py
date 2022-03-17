@@ -32,7 +32,7 @@ TANK_W = 30
 TANK_H = 30
 
 HOST_NAME = socket.gethostname()
-SERVER_IP = '0.0.0.0'
+SERVER_IP = '0.0.0.0' #socket.gethostbyname(HOST_NAME)
 
 #connect to server
 try:
@@ -175,22 +175,28 @@ def check_collisions(player, old_player):
 
     box_mask = pygame.mask.from_surface(BOX)
 
-    offset = (int(-tank_rect[0]), int(-tank_rect[1]))
+    #screen collision
 
+    offset = (int(-tank_rect[0]), int(-tank_rect[1]))
     no_bit = tank_mask.overlap_area(screen_mask, offset)
 
     if no_bit < 840:
         collide = True
 
+    #BOX COLLISION
     for box in boxes:
 
-        offset = (int(box[0] - tank_rect[0]), int(box[1] - tank_rect[1]))
+        #check rectangular collision before mask
+        if new_y + TANK_H > box[1] and new_y < box[1] + BOX_H:
+            if new_x + TANK_W > box[0] and new_x < box[0] + BOX_W:
 
-        poi = tank_mask.overlap(box_mask, offset)
+                offset = (int(box[0] - tank_rect[0]), int(box[1] - tank_rect[1]))
 
-        if poi != None:
-            # print("collide")
-            collide = True
+                poi = tank_mask.overlap(box_mask, offset)
+
+                if poi != None:
+                    # print("collide")
+                    collide = True
     
     if collide:
         player["velocity"] = -player["velocity"]
@@ -314,7 +320,7 @@ def threaded_client(conn, _id):
                 players[current_id] = data
                 print("[WARNING] No command received")
             
-            data = boxes, players, bullets, start
+            data = players, bullets, start
             
             send_data(conn, data)
 
@@ -337,7 +343,7 @@ def threaded_client(conn, _id):
 #MAINLOOP
 
 #setup level with boxes
-create_boxes(boxes, random.randint(1, 10))
+create_boxes(boxes, random.randint(50, 100))
 print("LENGTH OF BOXES:", len(boxes))
 
 print("[GAME] Setting up level")
