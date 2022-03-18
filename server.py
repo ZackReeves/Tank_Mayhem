@@ -1,5 +1,6 @@
 #imports
 import socket
+from tkinter.tix import MAX
 import pygame
 import time
 import random
@@ -22,6 +23,8 @@ BOXES = [scale_image(pygame.image.load("img/logs.png"), 0.66, 0.81), scale_image
 
 W, H = 800, 800
 
+GRID_SIZE = 25
+
 BOX_W = []
 BOX_H = []
 
@@ -30,11 +33,13 @@ for BOX in BOXES:
     BOX_W.append(BOX.get_width())
     BOX_H.append(BOX.get_height())
 
-BULLET_W = 7
-BULLET_H = 10
+BULLET_W = BULLET.get_width()
+BULLET_H = BULLET.get_height()
 
-TANK_W = 30
-TANK_H = 30
+TANK_W = TANK.get_width()
+TANK_H = TANK.get_height()
+
+MAX_VEL = 2
 
 HOST_NAME = socket.gethostname()
 SERVER_IP = socket.gethostbyname(HOST_NAME)
@@ -61,8 +66,6 @@ start = False
 
 
 #functions
-    
-#pos = [(150,60,randangle()), (650,740,randangle()), (650,60,randangle()), (150,740,randangle()), (400,740,randangle()), (400,60,randangle())]
 
 def get_start_position(players):
 
@@ -72,8 +75,8 @@ def get_start_position(players):
 
         stop = True
 
-        x = random.randrange(100, W-100)
-        y = random.randrange(60, H-60)
+        x = random.randrange(0, W-TANK_W)
+        y = random.randrange(0, H-TANK_H)
         angle = random.randrange(0, 360)
 
         rotated_tank, tank_rect = rotate_center(TANK, (x, y), angle)
@@ -101,12 +104,12 @@ def create_boxes(boxes, n):
     for i in range(n):
         while True:
             stop = True
-            x = random.randrange(1, 30)*random.choice((25, 50))
-            y = random.randrange(1, 30)*random.choice((25, 50))
+            x = random.randrange(0, W / (2*GRID_SIZE)) * random.choice((GRID_SIZE, 2 * GRID_SIZE))
+            y = random.randrange(0, H / (2*GRID_SIZE)) * random.choice((GRID_SIZE, 2 * GRID_SIZE))
             image_id = random.randrange(0,len(BOXES))
             for player in players:
                 p = players[player]
-                if p["x"] <= x + BOX_W[image_id] & p["x"] >= x & p["y"] <= y + BOX_H[image_id] & p["y"] >= y:
+                if p["x"] <= x + BOX_W[image_id] and p["x"] + TANK_W >= x and p["y"] <= y + BOX_H[image_id] and p["y"] + TANK_H >= y:
                     stop = False
             
             if stop:
@@ -129,9 +132,9 @@ def create_bullet(player):
 
     bullet_rect.centerx = tank_rect.centerx - dist * math.sin(radians)
     bullet_rect.centery = tank_rect.centery - dist * math.cos(radians)
-    
-    max_vel = 2
-    vel = 0.375 * (player["velocity"] + max_vel) + max_vel # normalises to 1 max_vel < vel < 1.5 max_vel
+
+
+    vel = 0.375 * (player["velocity"] + MAX_VEL) + MAX_VEL # normalises to 1 max_vel < vel < 1.5 max_vel
 
     bullets.append((bullet_rect.topleft[0], bullet_rect.topleft[1], angle, vel))
 
@@ -160,18 +163,10 @@ def move_bullets():
 
 
 def check_collisions(player, old_player):
+
     new_x = player["x"]
     new_y = player["y"]
     
-    # if new_x < 0:
-    #     new_x = 0
-    # elif new_x > W-TANK_W:
-    #     new_x = W-TANK_W
-
-    # if new_y < 0:
-    #     new_y = 0
-    # elif new_y > H-TANK_H:
-    #     new_y = H-TANK_H
     collide = False
 
     rotated_tank, tank_rect = rotate_center(TANK, (player["x"], player["y"]), player["angle"])
@@ -184,7 +179,7 @@ def check_collisions(player, old_player):
     offset = (int(-tank_rect[0]), int(-tank_rect[1]))
     no_bit = tank_mask.overlap_area(screen_mask, offset)
 
-    if no_bit < 840:
+    if no_bit < 840: #number of pixels in tank img is 860ish
         collide = True
 
     #BOX COLLISION
@@ -212,6 +207,8 @@ def check_collisions(player, old_player):
 
     for bullet in bullets:
 
+        hit = False
+
         rotated_bullet, bullet_rect = rotate_center(BULLET, (bullet[0], bullet[1]), bullet[2])
         bullet_mask = pygame.mask.from_surface(rotated_bullet)
 
@@ -220,10 +217,10 @@ def check_collisions(player, old_player):
         poi = tank_mask.overlap(bullet_mask, offset)
 
         if poi != None:
-            print("hit")
+            #print("hit")
             player["health"] -= 1
 
-            bullets.pop(bullets.index(bullet))
+            hit = True
         
         for box in boxes:
 
@@ -238,12 +235,51 @@ def check_collisions(player, old_player):
                     poi = tank_mask.overlap(box_mask, offset)
 
                     if poi != None:
-                        print("destroy")
-                        bullets.pop(bullets.index(bullet))
-                        #boxes.pop(bullets.index(box))
+                        hit = True
+                        boxes.pop(boxes.index(box))
 
-        
-    
+        if hit:
+            try:
+                bullets.pop(bullets.index(bullet))
+            except:
+                print("[GAME] Error deleteing bullet")
+
+
+def reset(current_id, name, conn):
+
+    global connections, players, boxes, bullets, start, _id
+
+    if players[current_id]["health"] > 0:
+
+        print(f"[SERVER] Server reset called by {name}")
+
+        #global variable reset
+        players = {}
+        boxes = []
+        bullets = []
+        connections = 0
+        _id = 0
+        start = False
+
+    #player variable reset
+    x, y, angle = get_start_position(players)
+    fired = False
+    vel = 0
+    health = 10
+    ready = False
+
+    players[current_id] = {"x":x, "y":y, "angle":angle, "fired":fired, "velocity":vel, "health":health, "name":name, "ready":ready} 
+
+    create_boxes(boxes, random.randint(100, 150))
+    print("LENGTH OF BOXES:", len(boxes))
+
+    print("[GAME] Setting up level")
+    print("[SERVER] Waiting for a connection, Server Started")
+
+    setup = boxes, players, bullets, start
+    send_data(conn, setup)
+
+
 
 def ready_up(players, connections):
 
@@ -305,11 +341,6 @@ def threaded_client(conn, _id):
 
     while True:
 
-        if start:
-            if players[current_id]["health"] == 0:
-                print(f"[LOG] {name} has died")
-                break
-
         try:
             command, data = receive_data(conn)            
             
@@ -318,7 +349,10 @@ def threaded_client(conn, _id):
 
             if command == "":
 
-                if start:
+                if start and players[current_id]["health"] == 0:
+                    pass
+
+                elif start:
 
                     check_collisions(data, players[current_id])
                     
@@ -332,20 +366,24 @@ def threaded_client(conn, _id):
                 #engame condition
                     
                 
-                # if len(boxes) < 25:
-                #     create_boxes(boxes, random.randrange(15, 25))
-                #     print("[GAME] Generating more boxes")
+                if len(boxes) < 50:
+                    print("[GAME] Generating more boxes")
+                    create_boxes(boxes, random.randrange(50, 100))
                 
             
             elif command == "ready":
+                if len(players) > 1:
+                    ready_up(players, connections)
                 players[current_id] = data
-                ready_up(players, connections)
+
+            elif command == "reset":
+                reset(current_id, name, conn)
 
             else:
                 players[current_id] = data
                 print("[WARNING] No command received")
             
-            data = players, bullets, start
+            data = boxes, players, bullets, start
             
             send_data(conn, data)
 
@@ -360,7 +398,10 @@ def threaded_client(conn, _id):
     connections -= 1
     if connections == 0:
         start = False
-    del players[current_id]
+    try:
+        del players[current_id]
+    except:
+        pass
     conn.close()
 
 
@@ -368,7 +409,7 @@ def threaded_client(conn, _id):
 #MAINLOOP
 
 #setup level with boxes
-create_boxes(boxes, random.randint(50, 100))
+create_boxes(boxes, random.randint(100, 150))
 print("LENGTH OF BOXES:", len(boxes))
 
 print("[GAME] Setting up level")
@@ -379,7 +420,7 @@ while True:
 
     conn, addr = S.accept()
 
-    if connections < 6 and not start:
+    if connections < 6:
         print("Connected to:", addr)
 
         connections += 1

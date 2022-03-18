@@ -4,13 +4,13 @@ import struct
 
 class Network:
     def __init__(self):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "146.169.156.111" #18.200.191.0  146.169.156.111 54.75.68.110
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
         self.port = 12000
+
+    def connect(self, name, ip):
+
+        self.server = ip #18.200.191.0  146.169.156.111 54.75.68.110
         self.addr = (self.server, self.port)
-
-
-    def connect(self, name):
 
         # connects to server
         try:
