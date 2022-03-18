@@ -1,6 +1,5 @@
 #imports
 import socket
-from tkinter.tix import MAX
 import pygame
 import time
 import random
@@ -405,4 +404,3 @@ while True:
 
 
 print("[SERVER] Server offline")
-    
