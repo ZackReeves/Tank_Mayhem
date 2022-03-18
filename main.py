@@ -41,6 +41,15 @@ players = {}
 bullets = []
 start = False
 
+def request_data_from_file():
+    f = open("data.txt")
+    data = f.read()
+    data = data.split('<-->')
+    if(len(data)==4):
+        return float(data[0]), float(data[1]), data[2], data[3]
+    else:
+        return [0,0,1,1]
+
 
 def redraw_game(boxes, players, bullets, start, current_id):
 
@@ -108,9 +117,9 @@ def redraw_game(boxes, players, bullets, start, current_id):
     
     #draw win msg
     if start and len(alive) == 1:
-        string = "Game Over, " + str(alive[0]) + " wins!! Resetting in 3 Seconds!"
+        string = "Game Over, " + str(alive[0]) + " wins!!"
         colour = GREEN
-
+        
     #draw death msg
     elif start and players[current_id]["health"] == 0:
         string = "You Died!!"
@@ -125,30 +134,9 @@ def redraw_game(boxes, players, bullets, start, current_id):
         string = ""
         colour = RED
 
-    
 
     text = TIME_FONT.render(string, 1, colour)
     SCREEN.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, SCREEN_HEIGHT//2 - text.get_height()))
-
-def reset(server, name, ip, player):
-    
-    global boxes, players, bullets, start
-
-    #server.disconnect()
-    command = "reset"
-    data = command, name
-    server.send_data(data)
-    pygame.time.wait(3000)
-
-    
-
-    SCREEN.fill(WHITE)
-    pygame.display.update()
-
-    boxes, players, bullets, start = server.receive_data()
-    
-
-    game_loop(name, ip)
 
 
 def game_loop(name, ip):
@@ -198,6 +186,7 @@ def game_loop(name, ip):
     while run:
 
         clock.tick(fps)
+        x, y, button0, button1 = request_data_from_file()
         player = players[current_id]
 
         command = ""
@@ -211,6 +200,10 @@ def game_loop(name, ip):
             player["fired"] = False
 
             fire_cooldown = max(fire_cooldown - 1, 0)
+
+            player["angle"] += 8*x
+            player["velocity"] =min(player["velocity"] -y, MAX_VEL)
+            player["velocity"] =max(player["velocity"] -y, -1*MAX_VEL)
 
             if keys[pygame.K_LEFT]:
                 player["angle"] += ROTATION_VEL
@@ -260,6 +253,7 @@ def game_loop(name, ip):
         boxes, players, bullets, start = server.receive_data()
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 run = False  
         
@@ -270,12 +264,17 @@ def game_loop(name, ip):
         #check endgame
         alive = 0
 
-        for p in players:
-            if players[p]["health"] > 0:
-                alive += 1         
+        for player in players:
+            if players[current_id]["health"] > 0:
+                alive += 1
 
+        
         if start and alive == 1:
-            reset(server, name, ip, player)
+            print("over")
+            run = False
+            pygame.time.wait(1000)
+            
+
 
 
     server.disconnect()

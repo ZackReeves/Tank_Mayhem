@@ -245,42 +245,6 @@ def check_collisions(player, old_player):
                 print("[GAME] Error deleteing bullet")
 
 
-def reset(current_id, name, conn):
-
-    global connections, players, boxes, bullets, start, _id
-
-    if players[current_id]["health"] > 0:
-
-        print(f"[SERVER] Server reset called by {name}")
-
-        #global variable reset
-        players = {}
-        boxes = []
-        bullets = []
-        connections = 0
-        _id = 0
-        start = False
-
-    #player variable reset
-    x, y, angle = get_start_position(players)
-    fired = False
-    vel = 0
-    health = 10
-    ready = False
-
-    players[current_id] = {"x":x, "y":y, "angle":angle, "fired":fired, "velocity":vel, "health":health, "name":name, "ready":ready} 
-
-    create_boxes(boxes, random.randint(100, 150))
-    print("LENGTH OF BOXES:", len(boxes))
-
-    print("[GAME] Setting up level")
-    print("[SERVER] Waiting for a connection, Server Started")
-
-    setup = boxes, players, bullets, start
-    send_data(conn, setup)
-
-
-
 def ready_up(players, connections):
 
     global start
@@ -376,9 +340,6 @@ def threaded_client(conn, _id):
                     ready_up(players, connections)
                 players[current_id] = data
 
-            elif command == "reset":
-                reset(current_id, name, conn)
-
             else:
                 players[current_id] = data
                 print("[WARNING] No command received")
@@ -396,12 +357,23 @@ def threaded_client(conn, _id):
     print("[DISCONNECT] Name:", name, ", Client Id:", current_id, "disconnected")
 
     connections -= 1
-    if connections == 0:
-        start = False
     try:
         del players[current_id]
     except:
         pass
+
+    if connections == 0:
+        print("[SERVER] No connections, resetting")
+        players = {}
+        boxes = []
+        bullets = []
+        connections = 0
+        _id = 0
+        start = False
+
+        create_boxes(boxes, random.randint(100, 150))
+
+
     conn.close()
 
 
