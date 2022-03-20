@@ -201,9 +201,9 @@ def game_loop(name, ip):
 
             fire_cooldown = max(fire_cooldown - 1, 0)
 
-            player["angle"] += 8*x
-            player["velocity"] =min(player["velocity"] -y, MAX_VEL)
-            player["velocity"] =max(player["velocity"] -y, -1*MAX_VEL)
+            player["angle"] += ROTATION_VEL*x
+            player["velocity"] =min(player["velocity"] -y*ACCELERATION, MAX_VEL)
+            player["velocity"] =max(player["velocity"] -y*ACCELERATION, -1*MAX_VEL)
 
             if keys[pygame.K_LEFT]:
                 player["angle"] += ROTATION_VEL
@@ -234,7 +234,7 @@ def game_loop(name, ip):
             player["x"] -= horizontal
             player["y"] -= vertical
             
-            if keys[pygame.K_SPACE] and fire_cooldown == 0:
+            if button0 == '0' or keys[pygame.K_SPACE] and fire_cooldown == 0:
                 fire_cooldown = FIRE_RATE
                 player["fired"] = True
 
@@ -243,7 +243,7 @@ def game_loop(name, ip):
 
         
         else:
-            if keys[pygame.K_SPACE]:
+            if  button0 == '0' or keys[pygame.K_SPACE]:
                 player["ready"] = True
                 
             command = "ready"     
