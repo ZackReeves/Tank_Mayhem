@@ -6,7 +6,7 @@ import pickle
 import struct
 from _thread import *
 
-server = "192.168.0.18" 
+server = "172.24.240.1" 
 PORT = 5555
 
 #setup socket
