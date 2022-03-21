@@ -166,7 +166,7 @@ def check_collisions(player, old_x, old_y, old_angle, current_id):
                     poi = tank_mask.overlap(box_mask, offset)
 
                     if poi != None:
-                        print("hit box")
+                        #print("hit box")
                         hit = True
                         del_box = box
 
@@ -180,7 +180,7 @@ def check_collisions(player, old_x, old_y, old_angle, current_id):
             poi = tank_mask.overlap(bullet_mask, offset)
 
             if poi != None:
-                print("hit")
+                #print("hit")
                 hit = True
 
                 if id == current_id:
@@ -419,7 +419,6 @@ def game_loop(name, ip):
         boxes, players, new_bullets, start = server.receive_data()
 
         for bullet in new_bullets:
-            print(bullet)
             if new_bullets[bullet] != (0,0,0,0):
                 bullets.append(new_bullets[bullet])
 
@@ -441,7 +440,7 @@ def game_loop(name, ip):
 
         
         if start and alive == 1:
-            print("over")
+            print("Game Over")
             run = False
             pygame.time.wait(1000)
             

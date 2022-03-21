@@ -41,7 +41,7 @@ for BOX in BOXES:
 MAX_VEL = 2
 
 HOST_NAME = socket.gethostname()
-SERVER_IP = socket.gethostbyname(HOST_NAME)
+SERVER_IP = '0.0.0.0' #socket.gethostbyname(HOST_NAME)
 
 #connect to server
 try:
