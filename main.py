@@ -357,7 +357,7 @@ def game_loop(name, ip):
                     player["velocity"] = min(player["velocity"] -y*ACCELERATION, MAX_VEL)
                     player["velocity"] = max(player["velocity"] -y*ACCELERATION, -1*MAX_VEL)
 
-                    if button0 == '0':
+                    if button0 == '0' and fire_cooldown == 0:
                         fire_cooldown = FIRE_RATE
                         player["fired"] = True
 

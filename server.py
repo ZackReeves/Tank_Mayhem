@@ -214,9 +214,9 @@ def threaded_client(conn, _id):
                 
                 new_bullets[current_id] = new_bullet
 
-                if len(boxes) < 50:
+                if len(boxes) < 10:
                     print("[GAME] Generating more boxes")
-                    create_boxes(boxes, random.randrange(50, 100))
+                    create_boxes(boxes, random.randrange(5, 10))
                 
             
             elif command == "ready":
@@ -255,7 +255,7 @@ def threaded_client(conn, _id):
         _id = 0
         start = False
 
-        create_boxes(boxes, random.randint(100, 150))
+        create_boxes(boxes, random.randint(10, 20))
 
 
     conn.close()
@@ -265,7 +265,7 @@ def threaded_client(conn, _id):
 #MAINLOOP
 
 #setup level with boxes
-create_boxes(boxes, random.randint(100, 150))
+create_boxes(boxes, random.randint(10, 20))
 print("LENGTH OF BOXES:", len(boxes))
 
 print("[GAME] Setting up level")
