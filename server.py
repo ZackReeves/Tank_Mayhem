@@ -192,10 +192,7 @@ def threaded_client(conn, _id):
     while True:
 
         try:
-            command = receive_data(conn)
-            data = receive_data(conn)
-            del_box = receive_data(conn) 
-            new_bullet = receive_data(conn)              
+            command, data, del_box, new_bullet = receive_data(conn)              
             
             if not data:
                 break
@@ -233,10 +230,7 @@ def threaded_client(conn, _id):
             
             data = boxes, players, new_bullets, start
             
-            send_data(conn, boxes)
-            send_data(conn, players)
-            send_data(conn, new_bullets)
-            send_data(conn, start)
+            send_data(conn, data)
 
         except Exception as e:
             print(e)
