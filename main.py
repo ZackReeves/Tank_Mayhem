@@ -414,9 +414,16 @@ def game_loop(name, ip):
             command = "ready"     
         
         data = command, player, del_box, new_bullet
-        server.send_data(data)
+        
+        server.send_data(command)
+        server.send_data(player)
+        server.send_data(del_box)
+        server.send_data(new_bullet)
 
-        boxes, players, new_bullets, start = server.receive_data()
+        boxes = server.receive_data()
+        players = server.receive_data()
+        new_bullets = server.receive_data()
+        start = server.receive_data()
 
         for bullet in new_bullets:
             print(bullet)
