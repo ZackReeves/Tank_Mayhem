@@ -46,7 +46,7 @@ ROTATION_VEL = 1
 MAX_VEL = 2
 ACCELERATION = 0.05
 
-FIRE_RATE = 10
+FIRE_RATE = 30
 
 #dynamic variables
 boxes = []

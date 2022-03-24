@@ -114,25 +114,6 @@ def create_boxes(boxes, n):
     
     boxes.sort(key=lambda x: x[1])
 
-def move_bullets():
-
-    for bullet in bullets: # bullets = [(x, y, a, v), (), ()]
-
-        i = bullets.index(bullet)
-
-        radians = math.radians(bullet[2])
-
-        vertical = math.cos(radians) * bullet[3]
-        horizontal = math.sin(radians) * bullet[3]
-        
-        new_x = bullet[0] - horizontal
-        new_y = bullet[1] - vertical
-
-        bullets[i] = (new_x, new_y, bullet[2], bullet[3])
-
-        if bullet[0] > SCREEN_WIDTH or bullet[0] + BULLET_W < 0 or bullet[1] + BULLET_H < 0 or bullet[1] > SCREEN_HEIGHT:
-            bullets.pop(i)
-
 def ready_up(players, connections):
 
     global start
@@ -204,13 +185,6 @@ def threaded_client(conn, _id):
                         boxes.pop(boxes.index(del_box))
                     except:
                         pass
-
-                # if del_bullet != ():
-                #     try:
-                #         bullets.pop(bullets.index(del_bullet))
-                        
-                #     except:
-                #         pass
                 
                 new_bullets[current_id] = new_bullet
 
