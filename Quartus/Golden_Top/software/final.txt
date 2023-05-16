@@ -1,0 +1,367 @@
+#include <sys/alt_stdio.h>
+#include "system.h"
+#include "altera_up_avalon_accelerometer_spi.h"
+#include "altera_avalon_timer_regs.h"
+#include "altera_avalon_timer.h"
+#include "altera_avalon_pio_regs.h"
+#include "sys/alt_irq.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#define OFFSET -32
+#define PWM_PERIOD 16
+#define CHARLIM 256		// Maximum character length of what the user places in memory.  Increase to allow longer sequences
+#define QUITLETTER '~' 		// Letter to kill all processing
+
+alt_8 pwm = 0;
+alt_u8 led;
+int level = 0;
+
+int chooseLed(int value){//input from nios ii
+	int leds;
+	if (value == 0){
+		leds = (0b0000000000);
+	}
+	else if (value == 1){
+		leds = (0b0000000001);
+	}
+	else if (value == 2){
+		leds = (0b0000000011);
+	}
+	else if (value == 3){
+		leds = (0b0000000111);
+	}
+	else if (value == 4){
+		leds = (0b0000001111);
+	}
+	else if (value == 5){
+		leds = (0b0000011111);
+	}
+	else if (value == 6){
+		leds = (0b0000111111);
+	}
+	else if (value == 7){
+		leds = (0b0001111111);
+	}
+	else if (value == 8){
+		leds = (0b0011111111);
+	}
+	else if (value == 9){
+		leds = (0b0111111111);
+	}
+	else if (value == 10){
+		leds = (0b1111111111);
+	}
+	else{leds = (0b0);}
+	return leds;
+}
+
+int chooseHEX0(int value){
+	//f: out = 7b1000111;
+	//i: out = 7b0110000;
+	//r: out = 7b0000101;
+	//s: out = 7b1011011;
+	//t: out = 7b0000111;
+	//e: out = 7b1001111;
+	//c: out = 7b0001101;
+	//o: out = 7b0011101;
+	//n: out = 7b0010101;
+	//d: out = 7b0111101;
+	//h: out = 7b0010111;
+	//x: out = 7b0110111;
+
+	int HEX;
+	if (value == 1){
+		HEX = (0b1000111); //F
+		}
+	else if (value == 2){
+		HEX = (0b1011011); //S
+		}
+	else if (value == 3){
+		HEX = (0b0000111); //T
+		}
+	else if (value == 4){
+		HEX = (0b1000111); //F
+		}
+	else if (value == 5){
+		HEX = (0b1000111); // F
+		}
+	else if (value == 6){
+		HEX = (0b1011011); //S
+		}
+	return HEX;
+
+}
+
+int chooseHEX1(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0110000); //I
+		}
+	else if (value == 2){
+		HEX = (0b1001111); //E
+		}
+	else if (value == 3){
+		HEX = (0b0010111); //H
+		}
+	else if (value == 4){
+		HEX = (0b0011101); //O
+		}
+	else if (value == 5){
+		HEX = (0b0110000); // I
+		}
+	else if (value == 6){
+		HEX = (0b0110000); //I
+		}
+	return HEX;
+}
+
+int chooseHEX2(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0000101); //R
+		}
+	else if (value == 2){
+		HEX = (0b0001101); //C
+		}
+	else if (value == 3){
+		HEX = (0b0110000); //I
+		}
+	else if (value == 4){
+		HEX = (0b0000101); //R
+		}
+	else if (value == 5){
+		HEX = (0b1000111); // F
+		}
+	else if (value == 6){
+		HEX = (0b0110111); //X
+		}
+	return HEX;
+}
+
+int chooseHEX3(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b1011011); //S
+		}
+	else if (value == 2){
+		HEX = (0b0011101); //O
+		}
+	else if (value == 3){
+			HEX = (0b0000101); //R
+		}
+	else if (value == 4){
+		HEX = (0b0000111); //T
+		}
+	else if (value == 5){
+		HEX = (0b0000111); // T
+		}
+	else if (value == 6){
+		HEX = (0b0000111); //T
+		}
+	return HEX;
+}
+
+int chooseHEX4(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0000111); //T
+		}
+	else if (value == 2){
+		HEX = (0b0010101); //N
+		}
+	else if (value == 3){
+		HEX = (0b0111101); //D
+		}
+	else if (value == 4){
+		HEX = (0b0010111); //H
+		}
+	else if (value == 5){
+		HEX = (0b0010111); //H
+		}
+	else if (value == 6){
+		HEX = (0b0010111); //H
+		}
+	return HEX;
+}
+
+int chooseHEX5(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 2){
+		HEX = (0b0111101); //D
+		}
+	else if (value == 3){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 4){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 5){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 6){
+		HEX = (0b0000000); //NOTHING
+		}
+	return HEX;
+}
+
+void led_write(alt_u8 led_pattern) {
+    IOWR(LED_BASE, 0, led_pattern);
+}
+
+void convert_read(alt_32 acc_read, int * level, alt_u8 * led) {
+    acc_read += OFFSET;
+    alt_u8 val = (acc_read >> 6) & 0x07;
+    * led = (8 >> val) | (8 << (8 - val));
+    * level = (acc_read >> 1) & 0x1f;
+}
+
+void sys_timer_isr() {
+    IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_BASE, 0);
+
+    /*if (pwm < abs(level)) {
+
+        if (level < 0) {
+            led_write(led << 1);
+        } else {
+            led_write(led >> 1);
+        }
+
+    } else {
+        led_write(led);
+    }
+
+    if (pwm > PWM_PERIOD) {
+        pwm = 0;
+    } else {
+        pwm++;
+    }*/
+
+}
+
+void timer_init(void * isr) {
+
+    IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER_BASE, 0x0003);
+    IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_BASE, 0);
+    IOWR_ALTERA_AVALON_TIMER_PERIODL(TIMER_BASE, 0x0900);
+    IOWR_ALTERA_AVALON_TIMER_PERIODH(TIMER_BASE, 0x0000);
+    alt_irq_register(TIMER_IRQ, 0, isr);
+    IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER_BASE, 0x0007);
+
+}
+
+void print_text(char *text, const int length) {
+	char *printMsg;
+	asprintf(&printMsg, "<--> Detected %d characters: %s <--> \n %c", length, text, 0x4); 	// Print out the strings
+	alt_putstr(printMsg);
+	free(printMsg);
+	memset(text, 0, 2*CHARLIM);								// Empty the text buffer for next input
+}
+
+char generate_text(char curr, int *length, char *text, int *running) {
+	if(curr == '\n') return curr;								// If the line is empty, return nothing.
+	int idx = 0;										// Keep track of how many characters have been sent down for later printing
+	char newCurr = curr;
+
+	while (newCurr != EOF && newCurr != '\n'){						// Keep reading characters until we get to the end of the line
+		if (newCurr == QUITLETTER) { *running = 0; }					// If quitting letter is encountered, setting running to 0
+		text[idx] = newCurr;								// Add the next letter to the text buffer
+		idx++;										// Keep track of the number of characters read
+		newCurr = alt_getchar();							// Get the next character
+	}
+	*length = idx;
+
+	return newCurr;
+}
+
+int read_chars() {
+	int led_on;
+	int pos;
+	int integer_lives;
+	int hex0, hex1, hex2, hex3, hex4, hex5;
+	char text[2*CHARLIM];									// The buffer for the printing text
+	char prevLetter = '!';
+	int length = 0;
+	int running = 1;
+
+	int button_datain;
+	double x[10] = {0};
+	double x_average=0;
+	double y[10] = {0};
+	double y_average=0;
+	int x_int, y_int;
+	alt_32 x_read, y_read;
+	alt_up_accelerometer_spi_dev * acc_dev;
+	acc_dev = alt_up_accelerometer_spi_open_dev("/dev/accelerometer_spi");
+
+	if (acc_dev == NULL) { // if return 1, check if the spi ip name is "accelerometer_spi"
+		alt_printf("Can't connect to Accelerometer!\n\r");
+		return 1;
+	}
+	else{alt_printf("connected to accelerometer\n");}
+
+	timer_init(sys_timer_isr);
+
+	while (running) {									// Keep running until QUITLETTER is encountered
+		prevLetter = alt_getchar();							// Extract the first character (and create a hold until one arrives)
+		prevLetter = generate_text(prevLetter, &length, text, &running);		// Process input text
+		//alt_printf(text);
+		integer_lives = atoi(text);
+		memset(text, 0, 2*CHARLIM);
+		led_on = chooseLed(integer_lives);
+		IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, led_on);
+		button_datain = IORD_ALTERA_AVALON_PIO_DATA(BUTTON_BASE);
+		alt_up_accelerometer_spi_read_x_axis(acc_dev, & x_read);
+		alt_up_accelerometer_spi_read_y_axis(acc_dev, & y_read);
+		x_average = 0;
+		y_average = 0;
+		for (int i=9; i>0; i--){
+			x[i]=x[i-1];
+		}
+		for (int i=9; i>0; i--){
+					y[i]=y[i-1];
+				}
+		x[0]= x_read;
+		y[0]= y_read;
+		for (int i=0; i<10; i++){
+			x_average += x[i]*0.1;
+		}
+		for (int i=0; i<10; i++){
+			y_average += y[i]*0.1;
+		}
+		x_int = x_average;
+		y_int = y_average;
+		alt_printf("<-->x: %x<-->y: %x<-->buttons: %x<-->\n", x_int, y_int, button_datain);
+		//print_text(text, length);							// Print input text
+	}
+
+	return 0;
+}
+
+int main(){
+
+	return read_chars();
+
+		//position and 7seg
+		/*pos = 1; //should be input from terminal
+		hex0 = chooseHEX0(pos);
+		hex1 = chooseHEX1(pos);
+		hex2 = chooseHEX2(pos);
+		hex3 = chooseHEX3(pos);
+		hex4 = chooseHEX4(pos);
+		hex5 = chooseHEX5(pos);*/
+
+		//below doesnt work, not sure why
+		/*IOWR_ALTERA_AVALON_PIO_DATA(HEX0_BASE, hex0);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX1_BASE, hex1);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX2_BASE, hex2);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX3_BASE, hex3);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX4_BASE, hex4);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX5_BASE, hex5);*/
+
+}
+

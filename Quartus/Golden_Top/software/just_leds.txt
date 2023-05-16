@@ -1,0 +1,247 @@
+#include "system.h"
+#include "altera_up_avalon_accelerometer_spi.h"
+#include "altera_avalon_timer_regs.h"
+#include "altera_avalon_timer.h"
+#include "altera_avalon_pio_regs.h"
+#include "sys/alt_irq.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+/*7SEG display */
+/*#define HEX0_BASE 0x00021050
+#define HEX1_BASE 0x00021040
+#define HEX2_BASE 0x00021030
+#define HEX3_BASE 0x00021020
+#define HEX4_BASE 0x00021010
+#define HEX5_BASE 0x00021000*/
+
+int chooseLed(int value){//input from nios ii
+	int leds;
+	if (value == 0){
+		leds = (0b0000000000);
+	}
+	else if (value == 1){
+		leds = (0b0000000001);
+	}
+	else if (value == 2){
+		leds = (0b0000000011);
+	}
+	else if (value == 3){
+		leds = (0b0000000111);
+	}
+	else if (value == 4){
+		leds = (0b0000001111);
+	}
+	else if (value == 5){
+		leds = (0b0000011111);
+	}
+	else if (value == 6){
+		leds = (0b0000111111);
+	}
+	else if (value == 7){
+		leds = (0b0001111111);
+	}
+	else if (value == 8){
+		leds = (0b0011111111);
+	}
+	else if (value == 9){
+		leds = (0b0111111111);
+	}
+	else if (value == 10){
+		leds = (0b1111111111);
+	}
+	else{leds = (0b0);}
+	return leds;
+}
+
+int chooseHEX0(int value){
+	//f: out = 7b1000111;
+	//i: out = 7b0110000;
+	//r: out = 7b0000101;
+	//s: out = 7b1011011;
+	//t: out = 7b0000111;
+	//e: out = 7b1001111;
+	//c: out = 7b0001101;
+	//o: out = 7b0011101;
+	//n: out = 7b0010101;
+	//d: out = 7b0111101;
+	//h: out = 7b0010111;
+	//x: out = 7b0110111;
+
+	int HEX;
+	if (value == 1){
+		HEX = (0b1000111); //F
+		}
+	else if (value == 2){
+		HEX = (0b1011011); //S
+		}
+	else if (value == 3){
+		HEX = (0b0000111); //T
+		}
+	else if (value == 4){
+		HEX = (0b1000111); //F
+		}
+	else if (value == 5){
+		HEX = (0b1000111); // F
+		}
+	else if (value == 6){
+		HEX = (0b1011011); //S
+		}
+	return HEX;
+
+}
+
+int chooseHEX1(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0110000); //I
+		}
+	else if (value == 2){
+		HEX = (0b1001111); //E
+		}
+	else if (value == 3){
+		HEX = (0b0010111); //H
+		}
+	else if (value == 4){
+		HEX = (0b0011101); //O
+		}
+	else if (value == 5){
+		HEX = (0b0110000); // I
+		}
+	else if (value == 6){
+		HEX = (0b0110000); //I
+		}
+	return HEX;
+}
+
+int chooseHEX2(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0000101); //R
+		}
+	else if (value == 2){
+		HEX = (0b0001101); //C
+		}
+	else if (value == 3){
+		HEX = (0b0110000); //I
+		}
+	else if (value == 4){
+		HEX = (0b0000101); //R
+		}
+	else if (value == 5){
+		HEX = (0b1000111); // F
+		}
+	else if (value == 6){
+		HEX = (0b0110111); //X
+		}
+	return HEX;
+}
+
+int chooseHEX3(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b1011011); //S
+		}
+	else if (value == 2){
+		HEX = (0b0011101); //O
+		}
+	else if (value == 3){
+			HEX = (0b0000101); //R
+		}
+	else if (value == 4){
+		HEX = (0b0000111); //T
+		}
+	else if (value == 5){
+		HEX = (0b0000111); // T
+		}
+	else if (value == 6){
+		HEX = (0b0000111); //T
+		}
+	return HEX;
+}
+
+int chooseHEX4(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0000111); //T
+		}
+	else if (value == 2){
+		HEX = (0b0010101); //N
+		}
+	else if (value == 3){
+		HEX = (0b0111101); //D
+		}
+	else if (value == 4){
+		HEX = (0b0010111); //H
+		}
+	else if (value == 5){
+		HEX = (0b0010111); //H
+		}
+	else if (value == 6){
+		HEX = (0b0010111); //H
+		}
+	return HEX;
+}
+
+int chooseHEX5(int value){
+	int HEX;
+	if (value == 1){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 2){
+		HEX = (0b0111101); //D
+		}
+	else if (value == 3){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 4){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 5){
+		HEX = (0b0000000); //NOTHING
+		}
+	else if (value == 6){
+		HEX = (0b0000000); //NOTHING
+		}
+	return HEX;
+}
+
+int main(){
+	int led_on;
+	int pos;
+	char lives; //need to read values from nios terminal
+	int integer_lives;
+	int hex0, hex1, hex2, hex3, hex4, hex5;
+
+	alt_printf("waiting:");
+
+	while (1){
+		//lives and LEDs
+		alt_putstr("waiting for input\n");
+		lives = 6; //alt_getchar(); // get char does not work
+		integer_lives = (int)(lives);
+		led_on = chooseLed(integer_lives);
+		IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, led_on);
+
+		//position and 7seg
+		/*pos = 1; //should be input from terminal
+		hex0 = chooseHEX0(pos);
+		hex1 = chooseHEX1(pos);
+		hex2 = chooseHEX2(pos);
+		hex3 = chooseHEX3(pos);
+		hex4 = chooseHEX4(pos);
+		hex5 = chooseHEX5(pos);*/
+
+		//below doesnt work, not sure why
+		/*IOWR_ALTERA_AVALON_PIO_DATA(HEX0_BASE, hex0);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX1_BASE, hex1);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX2_BASE, hex2);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX3_BASE, hex3);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX4_BASE, hex4);
+		IOWR_ALTERA_AVALON_PIO_DATA(HEX5_BASE, hex5);*/
+
+	}
+	return 0;
+}
+
